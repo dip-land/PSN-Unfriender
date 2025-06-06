@@ -1,0 +1,23 @@
+{
+  "name": "psn-unfriender",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "rimraf dist && tsc --project tsconfig.json && node ."
+  },
+  "dependencies": {
+    "@fastify/static": "^8.2.0",
+    "axios": "^1.9.0",
+    "fastify": "^5.3.3",
+    "jsdom": "^26.1.0",
+    "psn-api": "^2.13.0"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.15.30"
+  }
+}

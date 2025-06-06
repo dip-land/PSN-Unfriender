@@ -1,0 +1,102 @@
+<div>
+    <div class="main">
+        <h1>Select friends you want to keep</h1>
+        <input type="search" placeholder="Search Users" />
+        <button onclick="selectAll(true)">Select All</button>
+        <button onclick="selectAll(false)">Deselect All</button>
+        <button onclick="invertSelection()">Invert Selection</button>
+        <button id="removeFriends" class="red" onclick="document.getElementById('firstConfirmation').style.display = 'flex'">Remove Friends</button>
+    </div>
+    <div class="popup" id="firstConfirmation" style="display: none">
+        <h1>Are you sure you want to keep only these selected friends?</h1>
+        <div id="selectedFriends"></div>
+        <div>
+            <button onclick="document.getElementById('firstConfirmation').style.display = 'none'">Cancel</button>
+            <button onclick="document.getElementById('firstConfirmation').style.display = 'none'; document.getElementById('secondConfirmation').style.display = 'flex'" class="red">
+                Continue
+            </button>
+        </div>
+    </div>
+    <div class="popup" id="secondConfirmation" style="display: none">
+        <h1>Confirm Removal</h1>
+        <h3>Once you click "Confirm" there is no going back!!</h3>
+        <div>
+            <button onclick="document.getElementById('secondConfirmation').style.display = 'none'">Cancel</button>
+            <button id="finalConfirmationButton" class="red">Confirm</button>
+        </div>
+    </div>
+    <div class="popup" id="deletingFriends" style="display: none">
+        <h1>Friend Removal in progress...</h1>
+        <p>
+            This process can take up to 2 hours (if you have 2000 friends), this window will automatically reload when removal is complete. Closing the this window will not stop
+            the friend removal, to terminate the script and removal stop the script in your console. Terminating the script mid removal cannot revert the progress it has made.
+        </p>
+    </div>
+    <form id="friends">loading...</form>
+</div>
+<script>
+    window.onload = async () => {
+        const params = new URLSearchParams(window.location.search);
+        const data = await (await fetch('/api/friends', { headers: { token: params.get('npsso') } })).json();
+        const friendsDiv = document.getElementById('friends');
+        if (data.status === 500)
+            return (friendsDiv.innerText =
+                'There was a problem retrieving your PSN access code. Is your NPSSO code valid?\nTo get a new NPSSO code, visit https://ca.account.sony.com/api/v1/ssocookie.');
+        if (data.status === 401) return (friendsDiv.innerText = 'No NPSSO code was provided to the server.');
+        const keep = [];
+        const remove = [];
+        for (const user of data.sort((a, b) => a.onlineId.localeCompare(b.onlineId))) {
+            if (remove.length === 0) friendsDiv.innerHTML = '';
+            remove.push(data.id);
+            friendsDiv.innerHTML += `<div><input type="checkbox" id="${user.id}" /><label for="${user.id}"><img src="${user.avatars[3].url}" /><b>${user.onlineId}${
+                user.personalDetail ? `<br/>${user?.personalDetail.firstName} ${user?.personalDetail.lastName}` : ''
+            }<b/></label></div>`;
+        }
+
+        friendsDiv.addEventListener('change', (event) => {
+            if (event.target.checked) {
+                keep.push(event.target.id);
+                remove.splice(remove.indexOf(event.target.id), 1);
+            } else {
+                remove.push(event.target.id);
+                keep.splice(keep.indexOf(event.target.id), 1);
+            }
+        });
+
+        document.getElementById('removeFriends').addEventListener('click', async () => {
+            const data = await (await fetch('/api/friends', { method: 'POST', headers: { token: params.get('npsso') }, body: JSON.stringify(keep) })).json();
+            document.getElementById('selectedFriends').innerHTML = '';
+            for (const user of data.sort((a, b) => a.onlineId.localeCompare(b.onlineId))) {
+                document.getElementById('selectedFriends').innerHTML += `<div><label for="${user.id}"><img src="${user.avatars[3].url}" /><b>${user.onlineId}${
+                    user.personalDetail ? `<br/>${user?.personalDetail.firstName} ${user?.personalDetail.lastName}` : ''
+                }<b/></label></div>`;
+            }
+        });
+
+        document.getElementById('finalConfirmationButton').addEventListener('click', async () => {
+            document.getElementById('secondConfirmation').style.display = 'none';
+            document.getElementById('deletingFriends').style.display = 'flex';
+            const data = await (await fetch('/api/friends', { method: 'DELETE', headers: { token: params.get('npsso') }, body: JSON.stringify(remove) })).json();
+            console.log(data);
+            window.location.reload();
+        });
+    };
+
+    function selectAll(bool) {
+        const friendsDiv = document.getElementById('friends');
+        for (const child of friendsDiv.children) {
+            if (bool && !child.children[0].checked) {
+                child.children[0].click();
+            } else if (child.children[0].checked) {
+                child.children[0].click();
+            }
+        }
+    }
+
+    function invertSelection() {
+        const friendsDiv = document.getElementById('friends');
+        for (const child of friendsDiv.children) {
+            child.children[0].click();
+        }
+    }
+</script>
