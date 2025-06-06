@@ -4,7 +4,7 @@ Inspired by https://github.com/TobiasPankner/PSN-Unfriender
 - [Prerequisites](#prerequisites)
 - [Run the script](#run-the-script)
 
-TypeScript script to mass delete PSN friends.
+TypeScript WebUI to mass delete PSN friends.
 
 ## Prerequisites
   
